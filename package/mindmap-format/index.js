@@ -72,6 +72,11 @@ const setChildrenXY = (parent, children, line, elements) => {
 };
 
 // TODO: 解决多层树问题
+// 多层树解决思路，根据 El X 轴确定 root（后期可以根据 arrow 的多叉树方法找到，但这种方法太麻烦）
+// 确定 root 后根据 boundElements 的 arrow 先调整出 center tree 的 lines，然后调整完后再去根据
+// lines 的 endBinding 去找下一层的 root
+// 下一层同理
+// 注意，每一个处理后的 El 都需要将 id 添加到 id_set 中，避免死循环！
 const elements = ea.getViewSelectedElements();
 const parentEl = elements[0];
 ea.copyViewElementsToEAforEditing(elements);
