@@ -56,21 +56,22 @@ const setCenterDotOnLine = (lineEl, radius = 40, ratio = 1) => {
   lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.9;
 };
 
-// TODO: 设置 Text 为中间
 const setRectText = (rect, text) => {
-  // text.x = rect.x ;
-}
+  text.x = rect.x + (rect.width - text.width) / 2;
+  text.y = rect.y + (rect.height - text.height) / 2;
+};
 
 const setChildrenXY = (parent, children, line, elements) => {
   children.x = parent.x + parent.width + line.points[2][0];
   children.y =
     parent.y + parent.height / 2 + line.points[2][1] - children.height / 2;
   console.log(children.x, children.y);
-  const textDesc = children.boundElements.filter(el => el.type === "text")[0];
-  const textEl = elements.filter(el => el.id === textDesc.id);
+  const textDesc = children.boundElements.filter((el) => el.type === "text")[0];
+  const textEl = elements.filter((el) => el.id === textDesc.id)[0];
   setRectText(children, textEl);
 };
 
+// TODO: 解决多层树问题
 const elements = ea.getViewSelectedElements();
 const parentEl = elements[0];
 ea.copyViewElementsToEAforEditing(elements);
@@ -78,7 +79,7 @@ const lines = elements.filter(
   (el) => el.type === "arrow" || el.type === "line"
 );
 const rectangleChildrens = elements.filter(
-  (el) => el.type === "rectangle" && el.id !== parents.id
+  (el) => el.type === "rectangle" && el.id !== parentEl.id
 );
 
 console.log(elements);
@@ -96,8 +97,7 @@ lines.forEach((item, index) => {
     const target = rectangleChildrens.filter(
       (el) => el.id === item.endBinding.elementId
     )[0];
-    // TODO: 解决移动 rect 后文本偏移问题
-    setChildrenXY(parentEl, target, item);
+    setChildrenXY(parentEl, target, item, elements);
   }
 });
 console.log(lines);
