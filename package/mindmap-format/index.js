@@ -58,6 +58,69 @@ const setCenterDotOnLine = (lineEl, radius = 40, ratio = 1) => {
   lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.8;
 };
 
+// TODO: 使用间隔 gap
+
+/**
+ * 设置弧线中间点
+ * @param {any} lineEl Excalidraw 线段元素
+ * @param {number} [radius=40] 半径，默认为 40
+ * @param {number} [ratio=1] ，结束点在 Y 轴上的初始微调距离的系数，默认为 1
+ */
+const setTopCurveDotOnLine = (lineEl, radius = 40, ratio = 1) => {
+  if (lineEl.points.length < 3) {
+    lineEl.points.splice(1, 0, [
+      defaultDotX,
+      lineEl.points[0][1] - ratio * radius,
+    ]);
+  } else if (lineEl.points.length === 3) {
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] - ratio * radius];
+  } else {
+    lineEl.points.splice(2, lineEl.points.length - 3);
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] - ratio * radius];
+  }
+  lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
+  // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
+  // 因此需要调整 4 距离保证第二线段的直线程度
+  lineEl.points[2][1] = lineEl.points[1][1] - initAdjLength * ratio * 0.8;
+};
+
+const setMidCurveDotOnLine = (lineEl) => {
+  if (lineEl.points.length < 3) {
+    lineEl.points.splice(1, 0, [defaultDotX, lineEl.points[0][1]]);
+  } else if (lineEl.points.length === 3) {
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1]];
+  } else {
+    lineEl.points.splice(2, lineEl.points.length - 3);
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1]];
+  }
+  lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
+  lineEl.points[2][1] = lineEl.points[1][1];
+};
+
+/**
+ * 设置弧线中间点
+ * @param {any} lineEl Excalidraw 线段元素
+ * @param {number} [radius=40] 半径，默认为 40
+ * @param {number} [ratio=1] ，结束点在 Y 轴上的初始微调距离的系数，默认为 1
+ */
+const setBottomCurveDotOnLine = (lineEl, radius = 40, ratio = 1) => {
+  if (lineEl.points.length < 3) {
+    lineEl.points.splice(1, 0, [
+      defaultDotX,
+      lineEl.points[0][1] + ratio * radius,
+    ]);
+  } else if (lineEl.points.length === 3) {
+    lineEl.points[1] = [defaultDotX, radius];
+  } else {
+    lineEl.points.splice(2, lineEl.points.length - 3);
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + ratio * radius];
+  }
+  lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
+  // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
+  // 因此需要调整 4 距离保证第二线段的直线程度
+  lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.8;
+};
+
 const setTextXY = (rect, text) => {
   text.x = rect.x + (rect.width - text.width) / 2;
   text.y = rect.y + (rect.height - text.height) / 2;
@@ -89,9 +152,20 @@ const setChildrenXY = (parent, children, line, elementsMap) => {
  */
 const formatTree = (parent, lines, elementsMap) => {
   lines.forEach((item) => setCenter(parent, item));
-  lines.forEach((item, index) =>
-    setCenterDotOnLine(item, ++index * defaultStep, ++index)
-  );
+
+  const isEven = lines.length % 2 === 0;
+  const mid = Math.floor(lines.length / 2);
+  lines.forEach((item, index) => {
+    if (isEven) {
+      if (index < mid) setTopCurveDotOnLine(item, defaultStep, index + 1);
+      else setBottomCurveDotOnLine(item, defaultStep, index - mid + 1);
+    } else {
+      if (index < mid) setTopCurveDotOnLine(item, defaultStep, index + 1);
+      else if (index === mid) setMidCurveDotOnLine(item);
+      else setBottomCurveDotOnLine(item, defaultStep, index - mid + 1);
+    }
+    // setCenterDotOnLine(item, ++index * defaultStep, ++index);
+  });
   lines.forEach((item) => {
     if (item.endBinding !== null) {
       setChildrenXY(
