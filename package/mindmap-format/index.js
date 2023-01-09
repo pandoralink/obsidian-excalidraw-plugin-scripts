@@ -1,3 +1,7 @@
+/*
+```javascript
+*/
+
 // 弧线中间点默认的 X 坐标
 const defaultDotX = 40;
 // 弧线中间点默认的 Y 坐标
@@ -7,7 +11,9 @@ const defaultLengthWithCenterDot = 50;
 // 弧线中间点的初始半径
 const initRadius = 40;
 // 结束点在 Y 轴上的初始微调距离
-const initAdjLength = 5;
+const initAdjLength = 4;
+// 默认步长
+const defaultStep = 40;
 
 const setCenter = (parent, line) => {
   line.x = parent.x + parent.width;
@@ -31,7 +37,6 @@ const getNextRadius = (initX, initY, step, index = 0) => {
   );
 };
 
-// TODO：确立弧线前先过滤除起始两点外的其它中间节点
 /**
  * 设置弧线中间点
  * @param {any} lineEl Excalidraw 线段元素
@@ -40,73 +45,139 @@ const getNextRadius = (initX, initY, step, index = 0) => {
  */
 const setCenterDotOnLine = (lineEl, radius = 40, ratio = 1) => {
   if (lineEl.points.length < 3) {
-    lineEl.points.splice(1, 0, [
-      defaultDotX,
-      Math.sqrt(Math.pow(radius, 2) - Math.pow(defaultDotX - radius, 2)),
-    ]);
+    lineEl.points.splice(1, 0, [defaultDotX, radius]);
   } else if (lineEl.points.length === 3) {
-    lineEl.points[1][0] = defaultDotX;
-    lineEl.points[1][1] = Math.sqrt(
-      Math.pow(radius, 2) - Math.pow(defaultDotX - radius, 2)
-    );
+    lineEl.points[1] = [defaultDotX, radius];
+  } else {
+    lineEl.points.splice(2, lineEl.points.length - 3);
+    lineEl.points[1] = [defaultDotX, radius];
   }
   lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
   // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
   // 因此需要调整 4 距离保证第二线段的直线程度
-  lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.9;
+  lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.8;
 };
 
-const setRectText = (rect, text) => {
+const setTextXY = (rect, text) => {
   text.x = rect.x + (rect.width - text.width) / 2;
   text.y = rect.y + (rect.height - text.height) / 2;
 };
 
-const setChildrenXY = (parent, children, line, elements) => {
+const setChildrenXY = (parent, children, line, elementsMap) => {
   children.x = parent.x + parent.width + line.points[2][0];
   children.y =
     parent.y + parent.height / 2 + line.points[2][1] - children.height / 2;
-  console.log(children.x, children.y);
-  const textDesc = children.boundElements.filter((el) => el.type === "text")[0];
-  const textEl = elements.filter((el) => el.id === textDesc.id)[0];
-  setRectText(children, textEl);
+  if (
+    ["rectangle", "diamond", "ellipse"].includes(children.type) &&
+    ![null, undefined].includes(children.boundElements)
+  ) {
+    const textDesc = children.boundElements.filter(
+      (el) => el.type === "text"
+    )[0];
+    if (textDesc !== undefined) {
+      const textEl = elementsMap.get(textDesc.id);
+      setTextXY(children, textEl);
+    }
+  }
 };
 
-// TODO: 解决多层树问题
-// 多层树解决思路，根据 El X 轴确定 root（后期可以根据 arrow 的多叉树方法找到，但这种方法太麻烦）
-// 确定 root 后根据 boundElements 的 arrow 先调整出 center tree 的 lines，然后调整完后再去根据
-// lines 的 endBinding 去找下一层的 root
-// 下一层同理
-// 注意，每一个处理后的 El 都需要将 id 添加到 id_set 中，避免死循环！
-const elements = ea.getViewSelectedElements();
-const parentEl = elements[0];
-ea.copyViewElementsToEAforEditing(elements);
-const lines = elements.filter(
-  (el) => el.type === "arrow" || el.type === "line"
-);
-const rectangleChildrens = elements.filter(
-  (el) => el.type === "rectangle" && el.id !== parentEl.id
-);
+/**
+ * 格式化单层树
+ * @param {any} parent
+ * @param {Array} lines
+ * @param {Map} elementsMap
+ */
+const formatTree = (parent, lines, elementsMap) => {
+  lines.forEach((item) => setCenter(parent, item));
+  lines.forEach((item, index) =>
+    setCenterDotOnLine(item, ++index * defaultStep, ++index)
+  );
+  lines.forEach((item) => {
+    if (item.endBinding !== null) {
+      setChildrenXY(
+        parent,
+        elementsMap.get(item.endBinding.elementId),
+        item,
+        elementsMap
+      );
+    }
+  });
+};
 
-console.log(elements);
-lines.forEach((item) => setCenter(elements[0], item));
-lines.forEach((item, index) =>
-  setCenterDotOnLine(
-    item,
-    getNextRadius(defaultDotX, defaultDotY, 40, index),
-    ++index
-  )
-);
-lines.forEach((item, index) => {
-  if (item.endBinding !== null) {
-    // TODO: 检验是否为空/或者预先存储 id-Map
-    const target = rectangleChildrens.filter(
-      (el) => el.id === item.endBinding.elementId
-    )[0];
-    setChildrenXY(parentEl, target, item, elements);
+const generateTree = (elements) => {
+  const elIdMap = new Map([[elements[0].id, elements[0]]]);
+  let minXEl = elements[0];
+  for (let i = 1; i < elements.length; i++) {
+    elIdMap.set(elements[i].id, elements[i]);
+    if (
+      !(elements[i].type === "arrow" || elements[i].type === "line") &&
+      elements[i].x < minXEl.x
+    ) {
+      minXEl = elements[i];
+    }
   }
-});
-console.log(lines);
+  const root = {
+    el: minXEl,
+    totalHeight: minXEl.height,
+    linkChildrensLines: [],
+    isLeafNode: false,
+    children: [],
+  };
+  const preIdSet = new Set([root.el.id]); // 已经在树中的 El，避免死循环
+  const dfs = (root) => {
+    preIdSet.add(root.el.id);
+    let lines = root.el.boundElements.filter(
+      (el) =>
+        (el.type === "arrow" || el.type === "line") && !preIdSet.has(el.id)
+    );
+    if (lines.length === 0) {
+      root.isLeafNode = true;
+      return root.el.height;
+    } else {
+      lines = lines.map((elementDesc) => {
+        preIdSet.add(elementDesc.id);
+        return elIdMap.get(elementDesc.id);
+      });
+    }
+
+    const linkChildrensLines = [];
+    lines.forEach((el) => {
+      const line = el;
+      if (line && line.endBinding !== null && line.endBinding !== undefined) {
+        const children = elIdMap.get(line.endBinding.elementId);
+        linkChildrensLines.push(line);
+        root.children.push({
+          el: children,
+          totalHeight: children.height,
+          linkChildrensLines: [],
+          isLeafNode: false,
+          children: [],
+        });
+      }
+    });
+    let totalHeight = 0;
+    root.children.forEach((el) => (totalHeight += dfs(el)));
+
+    root.linkChildrensLines = linkChildrensLines;
+    if (root.children.length === 0) {
+      root.isLeafNode = true;
+      root.totalHeight = root.el.height;
+    } else if (root.children.length > 0) {
+      root.totalHeight = Math.max(root.el.height, totalHeight);
+    }
+    return totalHeight;
+  };
+  dfs(root);
+  const dfsForFormat = (root) => {
+    if (root.isLeafNode) return;
+    formatTree(root.el, root.linkChildrensLines, elIdMap);
+    root.children.forEach((el) => dfsForFormat(el));
+  };
+  dfsForFormat(root);
+};
+
+const elements = ea.getViewSelectedElements();
+generateTree(elements);
 
 ea.copyViewElementsToEAforEditing(elements);
-ea.copyViewElementsToEAforEditing(rectangleChildrens);
 ea.addElementsToView();
