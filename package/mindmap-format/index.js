@@ -14,6 +14,8 @@ const initRadius = 40;
 const initAdjLength = 4;
 // 默认步长
 const defaultStep = 40;
+// 默认间距
+const defaultGap = 20;
 
 const setCenter = (parent, line) => {
   line.x = parent.x + parent.width;
@@ -58,25 +60,20 @@ const setCenterDotOnLine = (lineEl, radius = 40, ratio = 1) => {
   lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.8;
 };
 
-// TODO: 使用间隔 gap
-
 /**
  * 设置弧线中间点
  * @param {any} lineEl Excalidraw 线段元素
- * @param {number} [radius=40] 半径，默认为 40
+ * @param {number} height dot 在 Y 轴的高度
  * @param {number} [ratio=1] ，结束点在 Y 轴上的初始微调距离的系数，默认为 1
  */
-const setTopCurveDotOnLine = (lineEl, radius = 40, ratio = 1) => {
+const setTopCurveDotOnLine = (lineEl, height, ratio = 1) => {
   if (lineEl.points.length < 3) {
-    lineEl.points.splice(1, 0, [
-      defaultDotX,
-      lineEl.points[0][1] - ratio * radius,
-    ]);
+    lineEl.points.splice(1, 0, [defaultDotX, lineEl.points[0][1] - height]);
   } else if (lineEl.points.length === 3) {
-    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] - ratio * radius];
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] - height];
   } else {
     lineEl.points.splice(2, lineEl.points.length - 3);
-    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] - ratio * radius];
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] - height];
   }
   lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
   // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
@@ -100,20 +97,17 @@ const setMidCurveDotOnLine = (lineEl) => {
 /**
  * 设置弧线中间点
  * @param {any} lineEl Excalidraw 线段元素
- * @param {number} [radius=40] 半径，默认为 40
+ * @param {number} height dot 在 Y 轴的高度
  * @param {number} [ratio=1] ，结束点在 Y 轴上的初始微调距离的系数，默认为 1
  */
-const setBottomCurveDotOnLine = (lineEl, radius = 40, ratio = 1) => {
+const setBottomCurveDotOnLine = (lineEl, height, ratio = 1) => {
   if (lineEl.points.length < 3) {
-    lineEl.points.splice(1, 0, [
-      defaultDotX,
-      lineEl.points[0][1] + ratio * radius,
-    ]);
+    lineEl.points.splice(1, 0, [defaultDotX, lineEl.points[0][1] + height]);
   } else if (lineEl.points.length === 3) {
-    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + ratio * radius];
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + height];
   } else {
     lineEl.points.splice(2, lineEl.points.length - 3);
-    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + ratio * radius];
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + height];
   }
   lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
   // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
@@ -145,24 +139,55 @@ const setChildrenXY = (parent, children, line, elementsMap) => {
 };
 
 /**
+ * 处理单层树时每个点的高度
+ * @param {Array} lines
+ * @param {Map} elementsMap
+ * @param {Boolean} isEven
+ * @param {Number} mid 'lines' 数组中点
+ * @returns {Array} 'lines' 对应的高度数组
+ */
+const handleDotYValue = (lines, elementsMap, isEven, mid) => {
+  const getComputedHeight = (line, elementsMap) => {
+    return elementsMap.get(line.endBinding.elementId).totalHeight;
+  };
+  const heightArr = new Array(lines.length).fill(0);
+  const upI = mid - 1;
+  const bottomI = isEven ? mid : mid + 1;
+  let initHeight = isEven ? 0 : getComputedHeight(lines[mid], elementsMap) / 2;
+  for (let i = upI; i >= 0; i--) {
+    heightArr[i] = initHeight + getComputedHeight(lines[i], elementsMap) / 2;
+    initHeight += getComputedHeight(lines[i], elementsMap);
+  }
+  initHeight = isEven ? 0 : getComputedHeight(lines[mid], elementsMap) / 2;
+  for (let i = bottomI; i < lines.length; i++) {
+    heightArr[i] = initHeight + getComputedHeight(lines[i], elementsMap) / 2;
+    initHeight += getComputedHeight(lines[i], elementsMap);
+  }
+  return heightArr;
+};
+
+/**
  * 格式化单层树
  * @param {any} parent
  * @param {Array} lines
+ * @param {Map} childrenDescMap
  * @param {Map} elementsMap
  */
-const formatTree = (parent, lines, elementsMap) => {
+const formatTree = (parent, lines, childrenDescMap, elementsMap) => {
   lines.forEach((item) => setCenter(parent, item));
 
   const isEven = lines.length % 2 === 0;
   const mid = Math.floor(lines.length / 2);
+  const heightArr = handleDotYValue(lines, childrenDescMap, isEven, mid);
+  console.log(heightArr);
   lines.forEach((item, index) => {
     if (isEven) {
-      if (index < mid) setTopCurveDotOnLine(item, defaultStep, index + 1);
-      else setBottomCurveDotOnLine(item, defaultStep, index - mid + 1);
+      if (index < mid) setTopCurveDotOnLine(item, heightArr[index], index + 1);
+      else setBottomCurveDotOnLine(item, heightArr[index], index - mid + 1);
     } else {
-      if (index < mid) setTopCurveDotOnLine(item, defaultStep, index + 1);
+      if (index < mid) setTopCurveDotOnLine(item, heightArr[index], index + 1);
       else if (index === mid) setMidCurveDotOnLine(item);
-      else setBottomCurveDotOnLine(item, defaultStep, index - mid);
+      else setBottomCurveDotOnLine(item, heightArr[index], index - mid);
     }
     // setCenterDotOnLine(item, ++index * defaultStep, ++index);
   });
@@ -206,7 +231,8 @@ const generateTree = (elements) => {
     );
     if (lines.length === 0) {
       root.isLeafNode = true;
-      return root.el.height;
+      root.totalHeight = root.el.height + 2 * defaultGap;
+      return root.totalHeight;
     } else {
       lines = lines.map((elementDesc) => {
         preIdSet.add(elementDesc.id);
@@ -222,7 +248,7 @@ const generateTree = (elements) => {
         linkChildrensLines.push(line);
         root.children.push({
           el: children,
-          totalHeight: children.height,
+          totalHeight: 0,
           linkChildrensLines: [],
           isLeafNode: false,
           children: [],
@@ -235,16 +261,19 @@ const generateTree = (elements) => {
     root.linkChildrensLines = linkChildrensLines;
     if (root.children.length === 0) {
       root.isLeafNode = true;
-      root.totalHeight = root.el.height;
+      root.totalHeight = root.el.height + 2 * defaultGap;
     } else if (root.children.length > 0) {
-      root.totalHeight = Math.max(root.el.height, totalHeight);
+      root.totalHeight = Math.max(root.el.height + 2 * defaultGap, totalHeight);
     }
     return totalHeight;
   };
   dfs(root);
   const dfsForFormat = (root) => {
     if (root.isLeafNode) return;
-    formatTree(root.el, root.linkChildrensLines, elIdMap);
+    const childrenDescMap = new Map(
+      root.children.map((item) => [item.el.id, item])
+    );
+    formatTree(root.el, root.linkChildrensLines, childrenDescMap, elIdMap);
     root.children.forEach((el) => dfsForFormat(el));
   };
   dfsForFormat(root);
