@@ -12,7 +12,7 @@ if (!settings["MindMap Format"]) {
         "This is prepared for the namespace of MindMap Format and does not need to be modified",
     },
     "default gap": {
-      value: 20,
+      value: 10,
       description: "Interval size of element",
     },
     "curve length": {
