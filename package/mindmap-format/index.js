@@ -110,7 +110,7 @@ const setBottomCurveDotOnLine = (lineEl, radius = 40, ratio = 1) => {
       lineEl.points[0][1] + ratio * radius,
     ]);
   } else if (lineEl.points.length === 3) {
-    lineEl.points[1] = [defaultDotX, radius];
+    lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + ratio * radius];
   } else {
     lineEl.points.splice(2, lineEl.points.length - 3);
     lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + ratio * radius];
@@ -162,7 +162,7 @@ const formatTree = (parent, lines, elementsMap) => {
     } else {
       if (index < mid) setTopCurveDotOnLine(item, defaultStep, index + 1);
       else if (index === mid) setMidCurveDotOnLine(item);
-      else setBottomCurveDotOnLine(item, defaultStep, index - mid + 1);
+      else setBottomCurveDotOnLine(item, defaultStep, index - mid);
     }
     // setCenterDotOnLine(item, ++index * defaultStep, ++index);
   });
