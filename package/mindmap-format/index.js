@@ -2,69 +2,60 @@
 ```javascript
 */
 
-// 弧线中间点默认的 X 坐标
-const defaultDotX = 40;
-// 弧线中间点默认的 Y 坐标
-const defaultDotY = 40;
-// 在 X 轴上距离弧线中间点的默认长度
-const defaultLengthWithCenterDot = 50;
-// 弧线中间点的初始半径
-const initRadius = 40;
-// 结束点在 Y 轴上的初始微调距离
+let settings = ea.getScriptSettings();
+//set default values on first run
+if (!settings["MindMap Format"]) {
+  settings = {
+    "MindMap Format": {
+      value: "Excalidraw/MindMap Format",
+      description:
+        "This is prepared for the namespace of MindMap Format and does not need to be modified",
+    },
+    "default gap": {
+      value: 20,
+      description: "Interval size of element",
+    },
+    "curve length": {
+      value: 40,
+      description: "The length of the curve part in the mind map line",
+    },
+    "length between element and line": {
+      value: 50,
+      description:
+        "The distance between the tail of the connection and the connecting elements of the mind map",
+    },
+  };
+  ea.setScriptSettings(settings);
+}
+
+// default X coordinate of the middle point of the arc
+const defaultDotX = Number(settings["curve length"].value);
+// The default length from the middle point of the arc on the X axis
+const defaultLengthWithCenterDot = Number(
+  settings["length between element and line"].value
+);
+// Initial trimming distance of the end point on the Y axis
 const initAdjLength = 4;
-// 默认步长
-const defaultStep = 40;
-// 默认间距
-const defaultGap = 20;
+// default gap
+const defaultGap = Number(settings["default gap"].value);
 
 const setCenter = (parent, line) => {
+  // Focus and gap need the api calculation of excalidraw
+  // but they are not available now
+  // so they are uniformly set to 0/1
+  line.startBinding.focus = 0;
+  line.startBinding.gap = 1;
+  line.endBinding.focus = 0;
+  line.endBinding.gap = 1;
   line.x = parent.x + parent.width;
   line.y = parent.y + parent.height / 2;
 };
 
 /**
- * 返回步长为 step 的下一个半径
- * @param {number} initX 初始 X 值
- * @param {number} initY 初始 Y 值
- * @param {number} step 步长
- * @param {number} [index=0] 倍数，默认为 0，需为 0,1,2...,n 正整数
- */
-const getNextRadius = (initX, initY, step, index = 0) => {
-  return (
-    (Math.pow(initY, 2) +
-      2 * initY * step * index +
-      Math.pow(step * index, 2) +
-      Math.pow(initX, 2)) /
-    (2 * initX)
-  );
-};
-
-/**
- * 设置弧线中间点
- * @param {any} lineEl Excalidraw 线段元素
- * @param {number} [radius=40] 半径，默认为 40
- * @param {number} [ratio=1] ，结束点在 Y 轴上的初始微调距离的系数，默认为 1
- */
-const setCenterDotOnLine = (lineEl, radius = 40, ratio = 1) => {
-  if (lineEl.points.length < 3) {
-    lineEl.points.splice(1, 0, [defaultDotX, radius]);
-  } else if (lineEl.points.length === 3) {
-    lineEl.points[1] = [defaultDotX, radius];
-  } else {
-    lineEl.points.splice(2, lineEl.points.length - 3);
-    lineEl.points[1] = [defaultDotX, radius];
-  }
-  lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
-  // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
-  // 因此需要调整 4 距离保证第二线段的直线程度
-  lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.8;
-};
-
-/**
- * 设置弧线中间点
- * @param {any} lineEl Excalidraw 线段元素
- * @param {number} height dot 在 Y 轴的高度
- * @param {number} [ratio=1] ，结束点在 Y 轴上的初始微调距离的系数，默认为 1
+ * set the middle point of curve
+ * @param {any} lineEl the line element of excalidraw
+ * @param {number} height height of dot on Y axis
+ * @param {number} [ratio=1] ，coefficient of the initial trimming distance of the end point on the Y axis, default is 1
  */
 const setTopCurveDotOnLine = (lineEl, height, ratio = 1) => {
   if (lineEl.points.length < 3) {
@@ -97,8 +88,8 @@ const setMidCurveDotOnLine = (lineEl) => {
 /**
  * 设置弧线中间点
  * @param {any} lineEl Excalidraw 线段元素
- * @param {number} height dot 在 Y 轴的高度
- * @param {number} [ratio=1] ，结束点在 Y 轴上的初始微调距离的系数，默认为 1
+ * @param {number} height height of dot on Y axis
+ * @param {number} [ratio=1] 结束点在 Y 轴上的初始微调距离的系数，默认为 1
  */
 const setBottomCurveDotOnLine = (lineEl, height, ratio = 1) => {
   if (lineEl.points.length < 3) {
@@ -139,12 +130,12 @@ const setChildrenXY = (parent, children, line, elementsMap) => {
 };
 
 /**
- * 处理单层树时每个点的高度
+ * handle the height of each point in the single-level tree
  * @param {Array} lines
  * @param {Map} elementsMap
  * @param {Boolean} isEven
- * @param {Number} mid 'lines' 数组中点
- * @returns {Array} 'lines' 对应的高度数组
+ * @param {Number} mid 'lines' array midpoint index
+ * @returns {Array} height array corresponding to 'lines'
  */
 const handleDotYValue = (lines, elementsMap, isEven, mid) => {
   const getComputedHeight = (line, elementsMap) => {
@@ -167,7 +158,7 @@ const handleDotYValue = (lines, elementsMap, isEven, mid) => {
 };
 
 /**
- * 格式化单层树
+ * format single-level tree
  * @param {any} parent
  * @param {Array} lines
  * @param {Map} childrenDescMap
@@ -189,7 +180,6 @@ const formatTree = (parent, lines, childrenDescMap, elementsMap) => {
       else if (index === mid) setMidCurveDotOnLine(item);
       else setBottomCurveDotOnLine(item, heightArr[index], index - mid);
     }
-    // setCenterDotOnLine(item, ++index * defaultStep, ++index);
   });
   lines.forEach((item) => {
     if (item.endBinding !== null) {
@@ -222,7 +212,7 @@ const generateTree = (elements) => {
     isLeafNode: false,
     children: [],
   };
-  const preIdSet = new Set([root.el.id]); // 已经在树中的 El，避免死循环
+  const preIdSet = new Set([root.el.id]); // The id_set of Elements that is already in the tree, avoid a dead cycle
   const dfs = (root) => {
     preIdSet.add(root.el.id);
     let lines = root.el.boundElements.filter(
@@ -283,4 +273,4 @@ const elements = ea.getViewSelectedElements();
 generateTree(elements);
 
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+await ea.addElementsToView(false, false);
