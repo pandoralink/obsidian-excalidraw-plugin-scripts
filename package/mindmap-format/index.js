@@ -1,4 +1,8 @@
 /*
+
+format **the left to right** mind map
+
+
 ```javascript
 */
 
@@ -86,10 +90,10 @@ const setMidCurveDotOnLine = (lineEl) => {
 };
 
 /**
- * 设置弧线中间点
- * @param {any} lineEl Excalidraw 线段元素
+ * set the middle point of curve
+ * @param {any} lineEl the line element of excalidraw
  * @param {number} height height of dot on Y axis
- * @param {number} [ratio=1] 结束点在 Y 轴上的初始微调距离的系数，默认为 1
+ * @param {number} [ratio=1] ，coefficient of the initial trimming distance of the end point on the Y axis, default is 1
  */
 const setBottomCurveDotOnLine = (lineEl, height, ratio = 1) => {
   if (lineEl.points.length < 3) {
@@ -130,6 +134,34 @@ const setChildrenXY = (parent, children, line, elementsMap) => {
 };
 
 /**
+ * returns the height of the upper part of all child nodes
+ * and the height of the lower part of all child nodes
+ * @param {Number[]} childrenTotalHeightArr
+ * @returns {Number[]} [topHeight, bottomHeight]
+ */
+const getNodeCurrentHeight = (childrenTotalHeightArr) => {
+  if (childrenTotalHeightArr.length <= 0) return [0, 0];
+  else if (childrenTotalHeightArr.length === 1)
+    return [childrenTotalHeightArr[0] / 2, childrenTotalHeightArr[0] / 2];
+  const heightArr = childrenTotalHeightArr;
+  let topHeight = 0,
+    bottomHeight = 0;
+  const isEven = heightArr.length % 2 === 0;
+  const mid = Math.floor(heightArr.length / 2);
+  const topI = mid - 1;
+  const bottomI = isEven ? mid : mid + 1;
+  topHeight = isEven ? 0 : heightArr[mid] / 2;
+  for (let i = topI; i >= 0; i--) {
+    topHeight += heightArr[i];
+  }
+  bottomHeight = isEven ? 0 : heightArr[mid] / 2;
+  for (let i = bottomI; i < heightArr.length; i++) {
+    bottomHeight += heightArr[i];
+  }
+  return [topHeight, bottomHeight];
+};
+
+/**
  * handle the height of each point in the single-level tree
  * @param {Array} lines
  * @param {Map} elementsMap
@@ -138,21 +170,27 @@ const setChildrenXY = (parent, children, line, elementsMap) => {
  * @returns {Array} height array corresponding to 'lines'
  */
 const handleDotYValue = (lines, elementsMap, isEven, mid) => {
-  const getComputedHeight = (line, elementsMap) => {
+  const getTotalHeight = (line, elementsMap) => {
     return elementsMap.get(line.endBinding.elementId).totalHeight;
   };
+  const getTopHeight = (line, elementsMap) => {
+    return elementsMap.get(line.endBinding.elementId).topHeight;
+  };
+  const getBottomHeight = (line, elementsMap) => {
+    return elementsMap.get(line.endBinding.elementId).bottomHeight;
+  };
   const heightArr = new Array(lines.length).fill(0);
-  const upI = mid - 1;
+  const upI = mid === 0 ? 0 : mid - 1;
   const bottomI = isEven ? mid : mid + 1;
-  let initHeight = isEven ? 0 : getComputedHeight(lines[mid], elementsMap) / 2;
+  let initHeight = isEven ? 0 : getTopHeight(lines[mid], elementsMap);
   for (let i = upI; i >= 0; i--) {
-    heightArr[i] = initHeight + getComputedHeight(lines[i], elementsMap) / 2;
-    initHeight += getComputedHeight(lines[i], elementsMap);
+    heightArr[i] = initHeight + getBottomHeight(lines[i], elementsMap);
+    initHeight += getTotalHeight(lines[i], elementsMap);
   }
-  initHeight = isEven ? 0 : getComputedHeight(lines[mid], elementsMap) / 2;
+  initHeight = isEven ? 0 : getBottomHeight(lines[mid], elementsMap);
   for (let i = bottomI; i < lines.length; i++) {
-    heightArr[i] = initHeight + getComputedHeight(lines[i], elementsMap) / 2;
-    initHeight += getComputedHeight(lines[i], elementsMap);
+    heightArr[i] = initHeight + getTopHeight(lines[i], elementsMap);
+    initHeight += getTotalHeight(lines[i], elementsMap);
   }
   return heightArr;
 };
@@ -208,20 +246,25 @@ const generateTree = (elements) => {
   const root = {
     el: minXEl,
     totalHeight: minXEl.height,
+    topHeight: 0,
+    bottomHeight: 0,
     linkChildrensLines: [],
     isLeafNode: false,
     children: [],
   };
   const preIdSet = new Set([root.el.id]); // The id_set of Elements that is already in the tree, avoid a dead cycle
-  const dfs = (root) => {
+  const dfsForTreeData = (root) => {
     preIdSet.add(root.el.id);
     let lines = root.el.boundElements.filter(
-      (el) =>
-        (el.type === "arrow" || el.type === "line") && !preIdSet.has(el.id)
+      (el) => el.type === "arrow" && !preIdSet.has(el.id)
     );
     if (lines.length === 0) {
       root.isLeafNode = true;
       root.totalHeight = root.el.height + 2 * defaultGap;
+      [root.topHeight, root.bottomHeight] = [
+        root.totalHeight / 2,
+        root.totalHeight / 2,
+      ];
       return root.totalHeight;
     } else {
       lines = lines.map((elementDesc) => {
@@ -239,25 +282,36 @@ const generateTree = (elements) => {
         root.children.push({
           el: children,
           totalHeight: 0,
+          topHeight: 0,
+          bottomHeight: 0,
           linkChildrensLines: [],
           isLeafNode: false,
           children: [],
         });
       }
     });
+
     let totalHeight = 0;
-    root.children.forEach((el) => (totalHeight += dfs(el)));
+    root.children.forEach((el) => (totalHeight += dfsForTreeData(el)));
 
     root.linkChildrensLines = linkChildrensLines;
     if (root.children.length === 0) {
       root.isLeafNode = true;
       root.totalHeight = root.el.height + 2 * defaultGap;
+      [root.topHeight, root.bottomHeight] = [
+        root.totalHeight / 2,
+        root.totalHeight / 2,
+      ];
     } else if (root.children.length > 0) {
       root.totalHeight = Math.max(root.el.height + 2 * defaultGap, totalHeight);
+      [root.topHeight, root.bottomHeight] = getNodeCurrentHeight(
+        root.children.map((item) => item.totalHeight)
+      );
     }
+
     return totalHeight;
   };
-  dfs(root);
+  dfsForTreeData(root);
   const dfsForFormat = (root) => {
     if (root.isLeafNode) return;
     const childrenDescMap = new Map(
