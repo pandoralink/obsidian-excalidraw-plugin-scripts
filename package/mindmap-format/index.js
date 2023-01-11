@@ -94,8 +94,7 @@ const setTopCurveDotOnLine = (lineEl, height, ratio = 1) => {
     lineEl.points[1] = [defaultDotX, lineEl.points[0][1] - height];
   }
   lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
-  // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
-  // 因此需要调整 4 距离保证第二线段的直线程度
+  // adjust the curvature of the second line segment
   lineEl.points[2][1] = lineEl.points[1][1] - initAdjLength * ratio * 0.8;
 };
 
@@ -128,8 +127,7 @@ const setBottomCurveDotOnLine = (lineEl, height, ratio = 1) => {
     lineEl.points[1] = [defaultDotX, lineEl.points[0][1] + height];
   }
   lineEl.points[2][0] = lineEl.points[1][0] + defaultLengthWithCenterDot;
-  // 由于 Excalidraw 提供的弧线在设置中间点后还会有一定的弧度
-  // 因此需要调整 4 距离保证第二线段的直线程度
+  // adjust the curvature of the second line segment
   lineEl.points[2][1] = lineEl.points[1][1] + initAdjLength * ratio * 0.8;
 };
 
