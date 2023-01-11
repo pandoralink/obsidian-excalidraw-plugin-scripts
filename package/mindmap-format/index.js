@@ -1,8 +1,4 @@
 /*
-
-format **the left to right** mind map
-
-
 ```javascript
 */
 
@@ -45,7 +41,7 @@ const defaultGap = Number(settings["default gap"].value);
 
 const setCenter = (parent, line) => {
   // Focus and gap need the api calculation of excalidraw
-  // but they are not available now
+  // e.g. determineFocusDistance, but they are not available now
   // so they are uniformly set to 0/1
   line.startBinding.focus = 0;
   line.startBinding.gap = 1;
@@ -208,7 +204,6 @@ const formatTree = (parent, lines, childrenDescMap, elementsMap) => {
   const isEven = lines.length % 2 === 0;
   const mid = Math.floor(lines.length / 2);
   const heightArr = handleDotYValue(lines, childrenDescMap, isEven, mid);
-  console.log(heightArr);
   lines.forEach((item, index) => {
     if (isEven) {
       if (index < mid) setTopCurveDotOnLine(item, heightArr[index], index + 1);
@@ -252,11 +247,17 @@ const generateTree = (elements) => {
     isLeafNode: false,
     children: [],
   };
-  const preIdSet = new Set([root.el.id]); // The id_set of Elements that is already in the tree, avoid a dead cycle
+  const preIdSet = new Set(); // The id_set of Elements that is already in the tree, avoid a dead cycle
   const dfsForTreeData = (root) => {
+    if (preIdSet.has(root.el.id)) {
+      return 0;
+    }
     preIdSet.add(root.el.id);
     let lines = root.el.boundElements.filter(
-      (el) => el.type === "arrow" && !preIdSet.has(el.id)
+      (el) =>
+        el.type === "arrow" &&
+        !preIdSet.has(el.id) &&
+        elIdMap.get(el.id)?.startBinding?.elementId === root.el.id
     );
     if (lines.length === 0) {
       root.isLeafNode = true;
@@ -276,7 +277,12 @@ const generateTree = (elements) => {
     const linkChildrensLines = [];
     lines.forEach((el) => {
       const line = el;
-      if (line && line.endBinding !== null && line.endBinding !== undefined) {
+      if (
+        line &&
+        line.endBinding !== null &&
+        line.endBinding !== undefined &&
+        !preIdSet.has(elIdMap.get(line.endBinding.elementId).id)
+      ) {
         const children = elIdMap.get(line.endBinding.elementId);
         linkChildrensLines.push(line);
         root.children.push({
