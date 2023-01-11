@@ -18,11 +18,13 @@ The order of nodes in the Y axis or vertical direction is determined by **the cr
 
 So if you want to readjust the order, you can **delete arrows and reconnect them**
 
+# setting
+
+Script provides options to adjust the style of mind map, The option is at the bottom of the option of the exalidraw plugin(e.g. Settings -> Community plugins -> Excalidraw -> drag to bottom)
+
 # problem
 
 1. since the start bingding and end bingding of the arrow are easily disconnected from the node, so if there are unformatted parts, please **check the connection** and use the script to **reformat**
-
-
 
 ```javascript
 */
