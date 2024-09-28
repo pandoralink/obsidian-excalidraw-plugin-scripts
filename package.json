@@ -10,7 +10,7 @@
   "author": "poplink",
   "license": "MIT",
   "workspaces": [
-    "package\\mindmap-format"
+    "packages\\mindmap-format"
   ],
   "devDependencies": {
     "prettier": "2.8.0"
