@@ -1,34 +1,3 @@
-/*
-
-format **the left to right** mind map
-
-![](https://raw.githubusercontent.com/pandoralink/my-drawing-bed/main/img/202301111712327.png)
-
-# tree
-
-Mind map is actually a tree, so you must have a **root node**. The script will determine **the leftmost element** of the selected element as the root element (node is excalidraw element, e.g. rectangle, diamond, ellipse, text, image, but it can't be arrow, line, freedraw, **group**)
-
-The element connecting node and node must be an **arrow** and  have the correct direction, e.g. **parent node -> children node**
-
-# sort
-
-The order of nodes in the Y axis or vertical direction is determined by **the creation time** of the arrow connecting it
-
-![](https://raw.githubusercontent.com/pandoralink/my-drawing-bed/main/img/202301111631728.png)
-
-So if you want to readjust the order, you can **delete arrows and reconnect them**
-
-# setting
-
-Script provides options to adjust the style of mind map, The option is at the bottom of the option of the exalidraw plugin(e.g. Settings -> Community plugins -> Excalidraw -> drag to bottom)
-
-# problem
-
-1. since the start bingding and end bingding of the arrow are easily disconnected from the node, so if there are unformatted parts, please **check the connection** and use the script to **reformat**
-
-```javascript
-*/
-
 let settings = ea.getScriptSettings();
 //set default values on first run
 if (!settings["MindMap Format"]) {
