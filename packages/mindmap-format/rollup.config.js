@@ -1,5 +1,11 @@
+const dotenv = require("dotenv");
+
 const { addPrefix } = require("./plugins/rollup-plugin-add-prefix");
 const { outputTarget } = require("./plugins/rollup-plugin-output-target");
+
+dotenv.config({
+  path: ".env.local",
+});
 
 const outputPath = "dist/Mindmap format.md";
 
