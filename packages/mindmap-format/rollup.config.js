@@ -1,4 +1,5 @@
 const dotenv = require("dotenv");
+const cleanup = require("rollup-plugin-cleanup");
 
 const { addPrefix } = require("./plugins/rollup-plugin-add-prefix");
 const { outputTarget } = require("./plugins/rollup-plugin-output-target");
@@ -8,10 +9,12 @@ dotenv.config({
 });
 
 const outputPath = "dist/Mindmap format.md";
+const isProd = process.env.NODE_ENV === "production";
 
 module.exports = {
   input: "index.js",
   plugins: [
+    isProd && cleanup({ maxEmptyLines: 1 }),
     addPrefix(outputPath),
     outputTarget({
       isOutputTarget: process.env.NODE_ENV === "development",
