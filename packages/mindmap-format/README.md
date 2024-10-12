@@ -11,3 +11,8 @@ Also offers a set of tools for engineering `ea-script` development, supporting t
 - [x] Environment configuration support
 - [x] Removed redundant bundle files
 - [x] Comment removal support
+
+# TODO
+
+- [ ] split index.js into multiple feature file
+- [ ] Try using a shortcut key + click event to open/close the mind map.

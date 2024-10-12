@@ -12,7 +12,7 @@ const outputPath = "dist/Mindmap format.md";
 const isProd = process.env.NODE_ENV === "production";
 
 module.exports = {
-  input: "index.js",
+  input: "src/index.js",
   plugins: [
     isProd && cleanup({ maxEmptyLines: 1 }),
     addPrefix(outputPath),

@@ -1,8 +1,8 @@
 {
   "name": "mindmap-format",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "serve": "rimraf dist && cross-env NODE_ENV=development rollup -c --watch",
     "build": "rimraf dist && cross-env NODE_ENV=production rollup -c"
