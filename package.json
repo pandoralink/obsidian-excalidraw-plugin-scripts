@@ -10,7 +10,8 @@
   "author": "poplink",
   "license": "MIT",
   "workspaces": [
-    "packages\\mindmap-format"
+    "packages\\mindmap-format",
+    "packages/@types/excalidraw-automate"
   ],
   "devDependencies": {
     "prettier": "2.8.0"

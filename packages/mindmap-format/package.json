@@ -11,6 +11,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/excalidraw-automate": "^1.0.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "rollup": "^4.22.5",

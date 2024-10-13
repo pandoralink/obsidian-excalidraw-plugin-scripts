@@ -11,6 +11,7 @@ Also offers a set of tools for engineering `ea-script` development, supporting t
 - [x] Environment configuration support
 - [x] Removed redundant bundle files
 - [x] Comment removal support
+- [ ] Support ExcalidrawAutomate type hints
 
 # TODO
 
