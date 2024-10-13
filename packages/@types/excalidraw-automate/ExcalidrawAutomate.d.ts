@@ -21,6 +21,10 @@ import {
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 type ExcalidrawPlugin = any;
 type ExcalidrawView = any;
+type Mutable<T> = {
+  -readonly [P in keyof T]: T[P];
+};
+type MutableExcalidrawElement = Mutable<ExcalidrawElement>;
 export interface ExportSettings {
   withBackground: boolean;
   withTheme: boolean;
@@ -499,7 +503,7 @@ export declare class ExcalidrawAutomate {
    *
    * @returns
    */
-  getViewSelectedElements(): ExcalidrawElement[];
+  getViewSelectedElements(): MutableExcalidrawElement[];
   /**
    *
    * @param el

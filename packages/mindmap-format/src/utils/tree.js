@@ -64,7 +64,15 @@ const formatTree = (
         );
       else if (index === mid)
         setMidCurveDotOnLine(item, dotX, lengthWithCenterDot);
-      else setBottomCurveDotOnLine(item, heightArr[index], index - mid);
+      else
+        setBottomCurveDotOnLine(
+          item,
+          heightArr[index],
+          index - mid,
+          dotX,
+          lengthWithCenterDot,
+          initAdjLength
+        );
     }
   });
   lines.forEach((item) => {

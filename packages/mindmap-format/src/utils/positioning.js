@@ -15,10 +15,37 @@ const setTextXY = (rect, text) => {
   text.y = rect.y + (rect.height - text.height) / 2;
 };
 
+const setChildrenXYWithElbowArrow = (parent, children, line) => {
+  const x = parent.x + parent.width + line.points[3][0];
+  const y = parent.y + parent.height / 2 + line.points[3][1] - children.height / 2;
+  return [x, y];
+}
+
+const setChildrenXYWithArrow = (parent, children, line) => {
+  const x = parent.x + parent.width + line.points[2][0];
+  const y = parent.y + parent.height / 2 + line.points[2][1] - children.height / 2;
+  return [x, y];
+}
+
 const setChildrenXY = (parent, children, line, elementsMap) => {
-  children.x = parent.x + parent.width + line.points[2][0];
-  children.y =
-    parent.y + parent.height / 2 + line.points[2][1] - children.height / 2;
+  switch (line.points.length) {
+    case 4: {
+      // Elbow arrow
+      const [x, y] = setChildrenXYWithElbowArrow(parent, children, line);
+      children.x = x;
+      children.y = y;
+      break;
+    }
+    case 3:
+    default: {
+      // Sharp arrow or Curved arrow
+      const [x, y] = setChildrenXYWithArrow(parent, children, line);
+      children.x = x;
+      children.y = y;
+      break;
+    }
+  }
+
   if (
     ["rectangle", "diamond", "ellipse"].includes(children.type) &&
     children.boundElements
