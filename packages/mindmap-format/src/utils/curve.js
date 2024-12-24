@@ -19,13 +19,24 @@ const setTopCurveDotOnLine = (
     lineEl.points.splice(1, 0, [dotX, lineEl.points[0][1] - height]);
   } else if (lineEl.points.length === 3) {
     lineEl.points[1] = [dotX, lineEl.points[0][1] - height];
-  } else if(lineEl.points.length === 4) {
+  } else if (lineEl.points.length === 4) {
     // 简单判断 lineEl 的类型，默认 4 个点就是 Elbow arrow
     // excalidraw 似乎能够拿到 arrow 的确切类型，即使设置了 lineEl 的点为 3 个后，再次拖动也会变成 Elbow arrow
     lineEl.points[1] = [dotX, lineEl.points[0][1]];
     lineEl.points[2] = [dotX, lineEl.points[0][1] - height];
     lineEl.points[3][0] = lineEl.points[2][0] + lengthWithCenterDot;
     lineEl.points[3][1] = lineEl.points[2][1];
+    return;
+  } else if (lineEl.points.length === 6) {
+    const [startX, y] = lineEl.points[0];
+    const newPoints = [
+      [startX, y],
+      [dotX, y],
+      [dotX, y - height],
+      [dotX + lengthWithCenterDot, y - height],
+    ];
+
+    lineEl.points = newPoints;
     return;
   } else {
     lineEl.points.splice(2, lineEl.points.length - 3);
@@ -76,6 +87,17 @@ const setBottomCurveDotOnLine = (
     lineEl.points[2] = [dotX, lineEl.points[0][1] + height];
     lineEl.points[3][0] = lineEl.points[2][0] + lengthWithCenterDot;
     lineEl.points[3][1] = lineEl.points[2][1];
+    return;
+  } else if (lineEl.points.length === 6) {
+    const [startX, y] = lineEl.points[0];
+    const newPoints = [
+      [startX, y],
+      [dotX, y],
+      [dotX, y + height],
+      [dotX + lengthWithCenterDot, y + height],
+    ];
+
+    lineEl.points = newPoints;
     return;
   } else {
     lineEl.points.splice(2, lineEl.points.length - 3);
